@@ -1,20 +1,16 @@
 1. <script> 應該放在哪裡？
 HTML 中 <script> 標籤可以放在三個常見位置：
-
 	1. <head> 中（未加 defer/async）
 		- 瀏覽器在讀取 HTML 時會 中斷解析，去下載並執行 JS，然後才繼續解析後續 DOM。
 		- 缺點：頁面渲染會被阻塞（阻塞渲染）。
 		- 用途：極少數情況需要 在頁面渲染前就執行 JS，例如 polyfill 或必須先載入的設定。
-
 	2. <head> 中 + defer
 		- 瀏覽器會在 背景下載 JS，但等到 DOM 完全解析後 才依序執行。
 		- 不會阻塞 HTML 解析。
 		- 最佳實踐之一（適合大部分情境）。
-
 	3. 放在 <body> 結尾（</body> 前）
 		- 常見的早期做法，因為這樣可以讓 HTML 先載入，最後才執行 JS，避免阻塞頁面。
 		- 與 <script defer> 的效果類似，但 defer 更語意化，且能保持 <head> 結構清晰。
-
 	✅ 最佳實踐
 	現代網頁開發中，建議 將 <script src="..."> 放在 <head>，並加上 defer。
 	原因：
@@ -43,16 +39,16 @@ HTML 中 <script> 標籤可以放在三個常見位置：
 4. 驗證方法
 可以用瀏覽器的 開發者工具 (Chrome DevTools → Network & Performance tab) 驗證：
 	1. 在 HTML 中放：
-''' html
+```html
 <script src="test1.js"></script>
 <script src="test2.js" defer></script>
 <script src="test3.js" async></script>
-'''
+```
 
 	2. 在每個 JS 裡加上：
-''' JavaScript
+```JavaScript
 console.log("test1 loaded");
-'''
+```
 
 	3. 開啟瀏覽器 DevTools → 看 Console 與 Performance Timeline：
 		- 同步 script：阻塞 HTML parsing。
