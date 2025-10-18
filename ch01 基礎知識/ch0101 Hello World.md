@@ -84,7 +84,8 @@ Script 放在單獨 js 檔案的好處：會有緩存，只需要載入一次
 ## 使用外部 js 腳本 顯示 alert
 接續上一題，把 alert 搬到外部檔案 js/alert.js 裡面。
 <details>
-<summary>參考答案</summary>
+  <summary>參考答案</summary>
+
   ```html html
   <!DOCTYPE html>
   <html>
@@ -96,4 +97,4 @@ Script 放在單獨 js 檔案的好處：會有緩存，只需要載入一次
   ```javascript alert.js
   alert("I'm JavaScript!");
   ```
-  </detail>
+</details>
