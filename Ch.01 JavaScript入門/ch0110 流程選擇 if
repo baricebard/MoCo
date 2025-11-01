@@ -1,0 +1,182 @@
+# 條件選擇流程：if, '?'  
+想要根據不同條件執行不同的操作  
+使用 `if` 和 `條件式 ? 敘述 1 : 敘述 2` 
+
+## 'if' 條件式
+當條件式成立時，執行一段程式碼
+```JavaScript
+if ( 條件式)  {
+    敘述區塊 1 ;
+}
+```
+範例  
+```JavaScript
+let year = prompt('ECMAScript-2015 在哪一年發佈？', '');
+if (year == 2015) alert( 'You are right!' );
+```
+上面的例子，判斷 year == 2015，實例上執行了資料型別轉換等操作。
+
+省略大括號 `{}` 時，敘述只有一行。  
+多行敘述區塊的例子：
+```JavaScript
+if (year == 2015) {
+  alert( "我的老天鵝!" );
+  alert( "你答業了!" );
+}
+```
+建議無論幾行敘述區塊，都加上 `{}`，會增加程式的可讀性。  
+
+## 布林轉換
+在 `if (...) ` 這裡，會執行括號中的條件式，然後把結果轉成 `boolean`。
+複習下資料型別轉換的規則：
+- 數字 `0`，空字串 `""`，`null`，未定義 `undefined`，`NaN` 都轉換成 `false`. 
+- 其他的都是 `true`
+
+永遠都不執行的程式碼：
+```JavaScript
+if (0) { // 0 會轉成 false
+  alert('我是大帥哥!') //這行永遠不會執行
+}
+```
+一定會執行的程式碼：
+```JavaScript
+if (1) { // 1 會轉成 true
+  alert('我是大美女!') //這行一定會執行
+}
+```
+一個傳遞結果的方式：
+```JavaScript
+let cond = (year == 2015); // 先計算結果，然後把結果存放在 cond 變數中
+
+if (cond) {
+  ...
+}
+```
+## `else` 語句
+if 的另一個寫法  
+```JavaScript
+if ( 條件式 ) {
+    敘述區塊 1 ;
+} else {
+    敘述區塊 2 ;
+}
+```
+範例：
+```JavaScript
+let year = prompt('ECMAScript-2015 在哪一年發佈？', '');
+
+if (year == 2015) {
+  alert( '答對了.' );
+} else {
+  alert( '這樣你都能錯' ); // 除了 2015 之外的數字
+}
+```
+## 多個條件式 `else if`
+當有多個條件要比較時  
+```JavaScript
+if ( 條件式 1 ) {
+    敘述區塊 1 ;
+} else if ( 條件式 2 ){
+    敘述區塊 2 ;
+} else if ( 條件式 3 ){
+    敘述區塊 3 ;
+}
+...
+else {
+    敘述區塊 n+1 ; //當所有條件都不成立時執行
+
+}
+```
+範例：
+```JavaScript
+let year = prompt('ECMAScript-2015 在哪一年發佈？', '');
+
+if ( year < 2015 ) {
+  alert( '有那麼早發佈嗎？' );
+} else if ( year > 2015 ) {
+  alert( '有那麼晚發佈嗎？' );
+} else {
+  alert( '正確' ); 
+}
+```
+條件判斷由上而下，依次進行判斷。  
+最後一組 `else` 是可選的，不一定要有。  
+
+## 條件運算子 `?` 
+用來判斷計算結果，  
+```JavaScript
+條件式 ? 敘述1 : 敘述2
+```
+```JavaScript
+let age = prompt('年紀?', '');
+(age > 18) ? alter('已成年') : alter('未成年')
+```
+一行搞定，但是可讀性差。
+
+依條件賦值的**一般寫法**  
+```JavaScript
+let accessAllowed;
+let age = prompt('年紀?', '');
+
+//注意底下這幾行
+if (age > 18) {
+  accessAllowed = true; 
+} else {
+  accessAllowed = false;
+}
+
+alert(accessAllowed);
+```
+用 `?` 簡式條件賦值寫法
+```JavaScript
+let age = prompt('年紀?', '');
+let accessAllowed = (age > 18) ? true : false;
+alter(accessAllowed)
+```
+減少程式碼行數，但可讀性降低。
+
+<details>
+  <summary>想一下，更正確的寫法</summary>
+
+  ```JavaScript
+  let accessAllowed = age > 18;
+  ```
+</details>  
+
+## 多個 `?`  
+使用多個 `?` 可以判斷多個條件  
+```JavaScript
+let age = prompt('age?', 18);
+
+let message = (age < 3) ? 'Hi, baby!' :
+  (age < 18) ? 'Hello!' :
+  (age < 100) ? 'Greetings!' :
+  'What an unusual age!';
+
+alert( message );
+```
+發生什麼事？可讀性差。  
+更好的寫法  
+```JavaScript
+if (age < 3) {
+  message = 'Hi, baby!';
+} else if (age < 18) {
+  message = 'Hello!';
+} else if (age < 100) {
+  message = 'Greetings!';
+} else {
+  message = 'What an unusual age!';
+}
+```
+
+下面的程式中，`if` 的條件式是字串零 `"0"`， `alert` 會執行嗎？
+```JavaScript  
+  if ("0") {
+    alert( 'Hello' );
+  }
+```
+<details>
+  <summary>if 的條件式，是字串零 "0"</summary>
+  會
+</details> 
+
