@@ -14,18 +14,36 @@ class SensorManager {
         this.init();
     }
 
-    init() {
+    async init() {
         // 檢查瀏覽器支援性
         if (!this.isSensorsSupported()) {
             alert('您的瀏覽器不支援裝置感測器');
             return;
         }
-        
-        this.startSensors();
+        const ok = await this.requestPermissionIfNeeded();
+        if (ok) this.startSensors();
     }
 
     isSensorsSupported() {
         return 'DeviceMotionEvent' in window && 'DeviceOrientationEvent' in window;
+    }
+
+    async requestPermissionIfNeeded() {
+        if (typeof DeviceMotionEvent.requestPermission === 'function') {
+            const response = await DeviceMotionEvent.requestPermission();
+            if (response !== 'granted') {
+            alert('需要授權才能讀取感測器資料');
+            return false;
+            }
+        }
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            const response = await DeviceOrientationEvent.requestPermission();
+            if (response !== 'granted') {
+            alert('需要授權才能讀取方向資料');
+            return false;
+            }
+        }
+        return true;
     }
 
     // DeviceMotionEvent
