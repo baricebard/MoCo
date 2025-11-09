@@ -1,25 +1,19 @@
-// sensors.js
+//1121
 class SensorManager {
     constructor() {
         this.sensorData = {
-            x: 0,
-            y: 0,
-            z: 0,
-            alpha: 0,
-            beta: 0,
-            gamma: 0,
+            x: 0, y: 0, z: 0,
+            alpha: 0, beta: 0, gamma: 0,
             timestamp: Date.now()
         };
-        
-        this.init();
     }
 
     async init() {
-        // 檢查瀏覽器支援性
         if (!this.isSensorsSupported()) {
             alert('您的瀏覽器不支援裝置感測器');
             return;
         }
+
         const ok = await this.requestPermissionIfNeeded();
         if (ok) this.startSensors();
     }
@@ -29,93 +23,63 @@ class SensorManager {
     }
 
     async requestPermissionIfNeeded() {
-        if (typeof DeviceMotionEvent.requestPermission === 'function') {
-            const response = await DeviceMotionEvent.requestPermission();
-            if (response !== 'granted') {
-            alert('需要授權才能讀取感測器資料');
-            return false;
+        try {
+            if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                const res = await DeviceMotionEvent.requestPermission();
+                if (res !== 'granted') {
+                    alert('需要授權才能讀取加速度資料');
+                    return false;
+                }
             }
-        }
-        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-            const response = await DeviceOrientationEvent.requestPermission();
-            if (response !== 'granted') {
-            alert('需要授權才能讀取方向資料');
-            return false;
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                const res = await DeviceOrientationEvent.requestPermission();
+                if (res !== 'granted') {
+                    alert('需要授權才能讀取方向資料');
+                    return false;
+                }
             }
+            return true;
+        } catch (err) {
+            console.error('Permission error:', err);
+            return false;
         }
-        return true;
     }
 
-    // DeviceMotionEvent
     startSensors() {
-        // 加速度感測器
         window.addEventListener('devicemotion', (event) => {
-            const acceleration = event.accelerationIncludingGravity;
-            
-            this.sensorData.x = this.roundValue(acceleration.x);
-            this.sensorData.y = this.roundValue(acceleration.y);
-            this.sensorData.z = this.roundValue(acceleration.z);
+            const acc = event.accelerationIncludingGravity;
+            if (!acc) return;
+            this.sensorData.x = this.round(acc.x);
+            this.sensorData.y = this.round(acc.y);
+            this.sensorData.z = this.round(acc.z);
             this.sensorData.timestamp = Date.now();
-            
             this.updateDisplay();
             this.updateJSONOutput();
         });
 
-        // 方向感測器
         window.addEventListener('deviceorientation', (event) => {
-            this.sensorData.alpha = this.roundValue(event.alpha);  // 0-360度
-            this.sensorData.beta = this.roundValue(event.beta);    // -180到180度
-            this.sensorData.gamma = this.roundValue(event.gamma);  // -90到90度
-            
+            this.sensorData.alpha = this.round(event.alpha);
+            this.sensorData.beta = this.round(event.beta);
+            this.sensorData.gamma = this.round(event.gamma);
             this.updateDisplay();
             this.updateJSONOutput();
         });
     }
 
-    roundValue(value) {
-        return value ? Math.round(value * 100) / 100 : 0;
+    round(v) {
+        return v ? Math.round(v * 100) / 100 : 0;
     }
 
-    // 更新DOM元素與JSON顯示
     updateDisplay() {
-        // 更新數值顯示
-        document.getElementById('x').textContent = this.sensorData.x;
-        document.getElementById('y').textContent = this.sensorData.y;
-        document.getElementById('z').textContent = this.sensorData.z;
-        document.getElementById('alpha').textContent = this.sensorData.alpha;
-        document.getElementById('beta').textContent = this.sensorData.beta;
-        document.getElementById('gamma').textContent = this.sensorData.gamma;
+        ['x','y','z','alpha','beta','gamma'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = this.sensorData[id];
+        });
     }
 
     updateJSONOutput() {
-        const jsonOutput = document.getElementById('jsonOutput');
-        const formattedJSON = {
-            motion: {
-                x: this.sensorData.x,
-                y: this.sensorData.y,
-                z: this.sensorData.z,
-                unit: "m/s²"
-            },
-            orientation: {
-                alpha: this.sensorData.alpha,
-                beta: this.sensorData.beta,
-                gamma: this.sensorData.gamma,
-                unit: "degrees"
-            },
-            timestamp: this.sensorData.timestamp,
-            deviceInfo: this.getDeviceInfo()
-        };
-        
-        jsonOutput.textContent = JSON.stringify(formattedJSON, null, 2);
+        const el = document.getElementById('jsonOutput');
+        if (!el) return;
+        el.textContent = JSON.stringify(this.sensorData, null, 2);
     }
-
-    getDeviceInfo() {
-        return {
-            userAgent: navigator.userAgent,
-            platform: navigator.platform,
-            timestamp: new Date().toISOString()
-        };
-    }
-
-
 }

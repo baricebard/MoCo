@@ -24,5 +24,11 @@
     </div>
 
     <script src="sensors.js"></script>
+	<script>
+	  document.getElementById('startBtn').addEventListener('click', async () => {
+		const manager = new SensorManager();
+		await manager.init();
+	  });
+	</script>
 </body>
 </html>
