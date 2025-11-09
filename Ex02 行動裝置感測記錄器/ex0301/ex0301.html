@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>裝置感測器整合</title>
+    <style>
+        .sensor-data { margin: 20px; padding: 15px; border: 1px solid #ccc; }
+        .axis { margin: 10px 0; }
+        .value { font-weight: bold; color: #007bff; }
+    </style>
+</head>
+<body>
+    <h1>裝置感測器資料即時顯示</h1>
+    <div class="sensor-data">
+        <div class="axis">X軸加速度: <span id="x" class="value">0</span></div>
+        <div class="axis">Y軸加速度: <span id="y" class="value">0</span></div>
+        <div class="axis">Z軸加速度: <span id="z" class="value">0</span></div>
+        <div class="axis">Alpha (方位角): <span id="alpha" class="value">0</span></div>
+        <div class="axis">Beta (前後傾角): <span id="beta" class="value">0</span></div>
+        <div class="axis">Gamma (左右傾角): <span id="gamma" class="value">0</span></div>
+    </div>
+    <div class="json-output">
+        <h3>JSON 資料格式:</h3>
+        <pre id="jsonOutput"></pre>
+    </div>
+
+    <script src="sensors.js"></script>
+</body>
+</html>
