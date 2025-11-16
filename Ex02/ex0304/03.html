@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Orientation + Motion Demo</title>
+<style>
+    body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.8; }
+    button { padding: 10px 18px; font-size: 1.2rem; }
+    h3 { margin-top: 30px; }
+    .val { font-size: 1.1rem; }
+</style>
+</head>
+<body>
+
+<h2>DeviceOrientation + DeviceMotion 整合示範</h2>
+<p>請按下按鈕授權後，旋轉手機與搖一搖。</p>
+
+<button id="btn">取得感測器授權並開始</button>
+
+<h3>DeviceOrientation (方向角度)</h3>
+<p class="val">Alpha (Z)：<span id="alpha">-</span></p>
+<p class="val">Beta (X)：<span id="beta">-</span></p>
+<p class="val">Gamma (Y)：<span id="gamma">-</span></p>
+
+<h3>DeviceMotion (加速度)</h3>
+<p class="val">ax：<span id="ax">-</span></p>
+<p class="val">ay：<span id="ay">-</span></p>
+<p class="val">az：<span id="az">-</span></p>
+
+<h3>DeviceMotion (含重力)</h3>
+<p class="val">ax_g：<span id="ax_g">-</span></p>
+<p class="val">ay_g：<span id="ay_g">-</span></p>
+<p class="val">az_g：<span id="az_g">-</span></p>
+
+<h3>Gyroscope 旋轉速率</h3>
+<p class="val">α(速度)：<span id="rAlpha">-</span></p>
+<p class="val">β(速度)：<span id="rBeta">-</span></p>
+<p class="val">γ(速度)：<span id="rGamma">-</span></p>
+
+<script>
+const btn = document.getElementById("btn");
+
+// Orientation
+const alphaEl = document.getElementById("alpha");
+const betaEl  = document.getElementById("beta");
+const gammaEl = document.getElementById("gamma");
+
+// Acceleration
+const axEl = document.getElementById("ax");
+const ayEl = document.getElementById("ay");
+const azEl = document.getElementById("az");
+
+// Acceleration including gravity
+const axgEl = document.getElementById("ax_g");
+const aygEl = document.getElementById("ay_g");
+const azgEl = document.getElementById("az_g");
+
+// Rotation rate
+const rAlphaEl = document.getElementById("rAlpha");
+const rBetaEl  = document.getElementById("rBeta");
+const rGammaEl = document.getElementById("rGamma");
+
+btn.addEventListener("click", async () => {
+    try {
+        // 檢查支援度
+        if (!window.DeviceMotionEvent && !window.DeviceOrientationEvent) {
+            alert("此裝置不支援 Motion/Orientation 感測器");
+            return;
+        }
+
+        // ======== Orientation 授權 ========
+        if (typeof DeviceOrientationEvent?.requestPermission === "function") {
+            const r1 = await DeviceOrientationEvent.requestPermission();
+            if (r1 !== "granted") {
+                alert("未允許讀取 DeviceOrientation");
+                return;
+            }
+        }
+
+        // ======== Motion 授權 ========
+        if (typeof DeviceMotionEvent?.requestPermission === "function") {
+            const r2 = await DeviceMotionEvent.requestPermission();
+            if (r2 !== "granted") {
+                alert("未允許讀取 DeviceMotion");
+                return;
+            }
+        }
+
+        // ======== DeviceOrientation Listener ========
+        window.addEventListener("deviceorientation", (event) => {
+            alphaEl.textContent = event.alpha?.toFixed(2) ?? "-";
+            betaEl.textContent  = event.beta?.toFixed(2) ?? "-";
+            gammaEl.textContent = event.gamma?.toFixed(2) ?? "-";
+        });
+
+        // ======== DeviceMotion Listener ========
+        window.addEventListener("devicemotion", (event) => {
+            const acc = event.acceleration || {};
+            axEl.textContent = acc.x?.toFixed(2) ?? "-";
+            ayEl.textContent = acc.y?.toFixed(2) ?? "-";
+            azEl.textContent = acc.z?.toFixed(2) ?? "-";
+
+            const accG = event.accelerationIncludingGravity || {};
+            axgEl.textContent = accG.x?.toFixed(2) ?? "-";
+            aygEl.textContent = accG.y?.toFixed(2) ?? "-";
+            azgEl.textContent = accG.z?.toFixed(2) ?? "-";
+
+            const rot = event.rotationRate || {};
+            rAlphaEl.textContent = rot.alpha?.toFixed(2) ?? "-";
+            rBetaEl.textContent  = rot.beta?.toFixed(2) ?? "-";
+            rGammaEl.textContent = rot.gamma?.toFixed(2) ?? "-";
+        });
+
+        btn.disabled = true;
+        btn.textContent = "感測器已啟動";
+
+    } catch (err) {
+        alert("錯誤：" + err);
+    }
+});
+</script>
+
+</body>
+</html>

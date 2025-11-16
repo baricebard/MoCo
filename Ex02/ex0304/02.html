@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DeviceOrientation Demo</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    line-height: 1.8;
+  }
+  #values {
+    margin-top: 20px;
+    font-size: 1.2rem;
+  }
+  button {
+    padding: 10px 18px;
+    font-size: 1.1rem;
+  }
+</style>
+</head>
+<body>
+
+<h2>DeviceOrientation Demo</h2>
+<p>按下按鈕以取得感測器使用權限並開始讀取 α/β/γ。</p>
+
+<button id="btn">取得授權並開始</button>
+
+<div id="values">
+  <p>Alpha (Z 軸): <span id="alpha">-</span></p>
+  <p>Beta (X 軸): <span id="beta">-</span></p>
+  <p>Gamma (Y 軸): <span id="gamma">-</span></p>
+</div>
+
+<script>
+  const btn = document.getElementById("btn");
+  const alphaEl = document.getElementById("alpha");
+  const betaEl = document.getElementById("beta");
+  const gammaEl = document.getElementById("gamma");
+
+  btn.addEventListener("click", async () => {
+    try {
+      // 1. 檢查 API 是否存在
+      if (typeof DeviceOrientationEvent === "undefined") {
+        alert("此裝置不支援 DeviceOrientation");
+        return;
+      }
+
+      // 2. iOS / Android Chrome 需進行授權
+      if (typeof DeviceOrientationEvent.requestPermission === "function") {
+        const state = await DeviceOrientationEvent.requestPermission();
+        if (state !== "granted") {
+          alert("使用者未允許存取感測器");
+          return;
+        }
+      }
+
+      // 3. 監聽事件
+      window.addEventListener("deviceorientation", (event) => {
+        const a = event.alpha;
+        const b = event.beta;
+        const g = event.gamma;
+
+        alphaEl.textContent = a ? a.toFixed(2) : "-";
+        betaEl.textContent = b ? b.toFixed(2) : "-";
+        gammaEl.textContent = g ? g.toFixed(2) : "-";
+      });
+
+      btn.disabled = true;
+      btn.textContent = "已啟動感測器";
+
+    } catch (err) {
+      alert("啟動感測器時發生錯誤：" + err);
+    }
+  });
+</script>
+
+</body>
+</html>
