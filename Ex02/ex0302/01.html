@@ -1,44 +1,3 @@
-# 裝置感測器整合實作
-1. DeviceMotionEvent  
-2. DeviceOrientationEvent  
-
-## DeviceMotion
-### DeviceMotion 是什麼？（基礎說明）
-
-DeviceMotionEvent 提供手機的運動與旋轉資訊，可取得：  
-
-- acceleration.x / y / z（加速度）
-- accelerationIncludingGravity.x / y / z（包含重力）
-- rotationRate.alpha / beta / gamma（旋轉角速度）
-- interval（更新頻率 ms）  
-
-用途：
-- 手機搖晃偵測
-- 遊戲控制（左右傾斜、搖動）
-- 手勢操作
-
-### 使用者授權（非常重要）
-iOS（Safari）
-- 必須在 **使用者操作（click/touch）**後 呼叫 
-    DeviceMotionEvent.requestPermission()
-- 未授權 → 永遠不會觸發事件（無錯誤）
-
-Android（Chrome）
-- 不需要 requestPermission（2025 年仍維持）
-
-### DeviceMotion 提供的資料（快速）
-
-| 欄位                                   | 說明             |
-| ------------------------------------ | -------------- |
-| `event.acceleration`                 | 不含重力的加速度（m/s²） |
-| `event.accelerationIncludingGravity` | 含重力（9.8m/s²）   |
-| `event.rotationRate.alpha`           | Z 軸旋轉（度/秒）     |
-| `event.rotationRate.beta`            | X 軸旋轉          |
-| `event.rotationRate.gamma`           | Y 軸旋轉          |
-| `event.interval`                     | 更新頻率（ms）       |
-
-### 範例
-```JavaScript
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -115,19 +74,3 @@ document.getElementById("btn").addEventListener("click", async () => {
 
 </body>
 </html>
-
-```
-
-### 感測器API介紹與環境設置
-DeviceMotionEvent (加速度)
-
-- 測量裝置的加速度
-- 包含 x, y, z 三軸數據
-- 單位：m/s²
-
-DeviceOrientationEvent (方向)
-
-- 測量裝置的旋轉角度
-- 包含 alpha, beta, gamma 三個角度
-- 單位：度數
-
