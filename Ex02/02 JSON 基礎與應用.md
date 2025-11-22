@@ -113,17 +113,17 @@
   "age": 20,     // 最後多餘的逗號
 }
 ```
-
-<details>
+## Ex 範例
 試著建立一個 JSON 物件來描述一本書：
 - 書名
 - 作者
 - 出版年
 - 標籤（陣列）
 - 是否有庫存
+<details>
   <summary>參考答案</summary>
 
-```Json
+```json
 {
   "title": "JavaScript 程式設計",
   "author": "張大師",
