@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>裝置狀態監控 - 完整權限管理 (無 class / async-await)</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .container { max-width: 800px; margin: 0 auto; }
+    .permission-btn { 
+      background: #4CAF50; 
+      color: white; 
+      padding: 10px 15px; 
+      border: none; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      margin: 5px; 
+    }
+    .permission-btn:hover { background: #45a049; }
+    #stateDisplay { 
+      background: #f5f5f5; 
+      padding: 15px; 
+      border-radius: 4px; 
+      white-space: pre-wrap; 
+      font-family: monospace; 
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>裝置狀態監控</h1>
+    
+    <div id="status">初始化中，請允許位置和感測器權限...</div>
+    
+    <!-- 手動權限請求按鈕（針對 iOS） -->
+    <div>
+      <button class="permission-btn" onclick="requestSensorPermissionsManually()">
+        請求感測器權限 (iOS)
+      </button>
+      <button class="permission-btn" onclick="retryGeolocation()">
+        重新請求位置權限
+      </button>
+    </div>
+    
+    <h3>即時裝置狀態：</h3>
+    <pre id="stateDisplay">等待資料...</pre>
+  </div>
+
+  <script>
+    // ----------------------------
+    // 1. 全域狀態與控制變數
+    // ----------------------------
+    const deviceState = {
+      lat: null,
+      lon: null,
+      accel: { x: null, y: null, z: null },
+      orientation: { alpha: null, beta: null, gamma: null }
+    };
+
+    const permissionsGranted = {
+      geolocation: false,
+      motion: false,
+      orientation: false
+    };
+
+    let geoWatchId = null;
+    let motionHandler = null;
+    let orientationHandler = null;
+    let onUpdateCallback = null;
+
+    // ----------------------------
+    // 2. 狀態存取 / 更新
+    // ----------------------------
+    function setUpdateCallback(callback) {
+      onUpdateCallback = callback;
+    }
+
+    function getState() {
+      // 回傳淺拷貝，避免外部直接改到內部物件
+      return {
+        lat: deviceState.lat,
+        lon: deviceState.lon,
+        accel: { ...deviceState.accel },
+        orientation: { ...deviceState.orientation }
+      };
+    }
+
+    function getStateJSON() {
+      return JSON.stringify(deviceState, null, 2);
+    }
+
+    function onStateUpdate() {
+      console.log("裝置狀態更新:", getStateJSON());
+      if (typeof onUpdateCallback === "function") {
+        onUpdateCallback(getState());
+      }
+    }
+
+    // ----------------------------
+    // 3. Geolocation 相關
+    // ----------------------------
+
+    // 將 callback 型式的 geolocation 封裝成可 await 的函式
+    function getCurrentPositionOnce(options) {
+      return new Promise((resolve, reject) => {
+        if (!("geolocation" in navigator)) {
+          reject(new Error("地理位置 API 不被支援"));
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(resolve, reject, options);
+      });
+    }
+
+    async function requestGeolocationPermission() {
+      if (!("geolocation" in navigator)) {
+        console.warn("地理位置 API 不被支援");
+        return;
+      }
+
+      try {
+        if (navigator.permissions && navigator.permissions.query) {
+          const result = await navigator.permissions.query({ name: "geolocation" });
+          if (result.state === "granted") {
+            permissionsGranted.geolocation = true;
+            return;
+          }
+          // 若是 prompt / denied，下面會再用一次 getCurrentPosition 嘗試觸發
+        }
+      } catch (error) {
+        console.log("Permissions API 可能不支援 geolocation:", error);
+      }
+
+      try {
+        // 透過實際呼叫觸發權限視窗
+        await getCurrentPositionOnce({ timeout: 1000 });
+        permissionsGranted.geolocation = true;
+      } catch (error) {
+        console.log("地理位置權限請求需要使用者互動或已被拒絕:", error);
+      }
+    }
+
+    function updateGeolocation(position) {
+      deviceState.lat = position.coords.latitude;
+      deviceState.lon = position.coords.longitude;
+      onStateUpdate();
+    }
+
+    function handleGeolocationError(error) {
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          console.error("使用者拒絕地理位置權限");
+          break;
+        case error.POSITION_UNAVAILABLE:
+          console.error("無法取得位置資訊");
+          break;
+        case error.TIMEOUT:
+          console.error("位置請求超時");
+          break;
+        default:
+          console.error("未知地理位置錯誤:", error);
+      }
+    }
+
+    function startGeolocationWatch() {
+      if (!("geolocation" in navigator)) {
+        console.warn("地理位置 API 不被支援");
+        return;
+      }
+
+      geoWatchId = navigator.geolocation.watchPosition(
+        (position) => {
+          updateGeolocation(position);
+        },
+        (error) => {
+          console.error("位置監聽錯誤:", error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 1000
+        }
+      );
+    }
+
+    async function setupGeolocation() {
+      if (!("geolocation" in navigator)) {
+        console.warn("地理位置 API 不被支援");
+        return;
+      }
+
+      try {
+        const position = await getCurrentPositionOnce({
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        });
+        permissionsGranted.geolocation = true;
+        updateGeolocation(position);
+        startGeolocationWatch();
+      } catch (error) {
+        console.error("地理位置權限被拒絕或錯誤:", error);
+        handleGeolocationError(error);
+      }
+    }
+
+    // ----------------------------
+    // 4. 感測器權限 (accelerometer / gyroscope)
+    // ----------------------------
+    async function requestSensorPermissionsIfSupported() {
+      try {
+        if (navigator.permissions && navigator.permissions.query) {
+          const motionPermission = await navigator.permissions.query({ name: "accelerometer" });
+          if (motionPermission.state === "granted") {
+            permissionsGranted.motion = true;
+          }
+
+          const orientationPermission = await navigator.permissions.query({ name: "gyroscope" });
+          if (orientationPermission.state === "granted") {
+            permissionsGranted.orientation = true;
+          }
+        } else {
+          // 舊版瀏覽器當作可直接使用
+          permissionsGranted.motion = true;
+          permissionsGranted.orientation = true;
+        }
+      } catch (error) {
+        console.log("感測器權限 API 可能不被支援，嘗試直接使用:", error);
+        permissionsGranted.motion = true;
+        permissionsGranted.orientation = true;
+      }
+    }
+
+    // iOS 等需要手動觸發的情況使用
+    async function requestSensorPermissionsManually() {
+      // DeviceMotion (accelerometer)
+      if (typeof DeviceMotionEvent !== "undefined" &&
+          typeof DeviceMotionEvent.requestPermission === "function") {
+        try {
+          const motionState = await DeviceMotionEvent.requestPermission();
+          if (motionState === "granted") {
+            permissionsGranted.motion = true;
+            startMotionListener();
+            console.log("運動感測器權限已授予");
+          } else {
+            console.warn("運動感測器權限未授予");
+          }
+        } catch (error) {
+          console.error("運動感測器權限錯誤:", error);
+        }
+      }
+
+      // DeviceOrientation (gyroscope)
+      if (typeof DeviceOrientationEvent !== "undefined" &&
+          typeof DeviceOrientationEvent.requestPermission === "function") {
+        try {
+          const orientationState = await DeviceOrientationEvent.requestPermission();
+          if (orientationState === "granted") {
+            permissionsGranted.orientation = true;
+            startOrientationListener();
+            console.log("方向感測器權限已授予");
+          } else {
+            console.warn("方向感測器權限未授予");
+          }
+        } catch (error) {
+          console.error("方向感測器權限錯誤:", error);
+        }
+      }
+    }
+
+    // ----------------------------
+    // 5. 感測器事件監聽
+    // ----------------------------
+    function startMotionListener() {
+      if (!("DeviceMotionEvent" in window)) {
+        console.warn("DeviceMotion API 不被支援");
+        return;
+      }
+      if (motionHandler) {
+        return; // 已經在監聽
+      }
+
+      motionHandler = function (event) {
+        const accel = event.accelerationIncludingGravity || {};
+        deviceState.accel.x = accel.x ?? null;
+        deviceState.accel.y = accel.y ?? null;
+        deviceState.accel.z = accel.z ?? null;
+        onStateUpdate();
+      };
+
+      window.addEventListener("devicemotion", motionHandler);
+    }
+
+    function startOrientationListener() {
+      if (!("DeviceOrientationEvent" in window)) {
+        console.warn("DeviceOrientation API 不被支援");
+        return;
+      }
+      if (orientationHandler) {
+        return; // 已經在監聽
+      }
+
+      orientationHandler = function (event) {
+        deviceState.orientation.alpha = event.alpha;
+        deviceState.orientation.beta = event.beta;
+        deviceState.orientation.gamma = event.gamma;
+        onStateUpdate();
+      };
+
+      window.addEventListener("deviceorientation", orientationHandler);
+    }
+
+    async function setupSensors() {
+      // 非 iOS (沒有 requestPermission) 可以直接開始監聽
+      if (typeof DeviceMotionEvent === "undefined" ||
+          typeof DeviceMotionEvent.requestPermission !== "function") {
+        startMotionListener();
+      }
+
+      if (typeof DeviceOrientationEvent === "undefined" ||
+          typeof DeviceOrientationEvent.requestPermission !== "function") {
+        startOrientationListener();
+      }
+    }
+
+    // ----------------------------
+    // 6. 初始化 / 銷毀
+    // ----------------------------
+    async function requestBasePermissions() {
+      await requestGeolocationPermission();
+      await requestSensorPermissionsIfSupported();
+    }
+
+    async function initDeviceStateManager() {
+      const statusDiv = document.getElementById("status");
+      if (statusDiv) {
+        statusDiv.textContent = "初始化中，請允許位置和感測器權限...";
+      }
+
+      await requestBasePermissions();
+      await setupGeolocation();
+      await setupSensors();
+
+      if (statusDiv) {
+        statusDiv.textContent = "資料收集中...";
+      }
+    }
+
+    function destroyDeviceStateManager() {
+      if (geoWatchId !== null) {
+        navigator.geolocation.clearWatch(geoWatchId);
+        geoWatchId = null;
+      }
+      if (motionHandler) {
+        window.removeEventListener("devicemotion", motionHandler);
+        motionHandler = null;
+      }
+      if (orientationHandler) {
+        window.removeEventListener("deviceorientation", orientationHandler);
+        orientationHandler = null;
+      }
+    }
+
+    // ----------------------------
+    // 7. DOM 綁定與週期 log
+    // ----------------------------
+    window.addEventListener("load", () => {
+      const stateDisplay = document.getElementById("stateDisplay");
+
+      setUpdateCallback((state) => {
+        if (stateDisplay) {
+          stateDisplay.textContent = JSON.stringify(state, null, 2);
+        }
+      });
+
+      // 初始化整個流程
+      initDeviceStateManager();
+
+      // 定期列出目前狀態
+      setInterval(() => {
+        console.log("當前裝置狀態:", getState());
+      }, 5000);
+
+      // 將部分函式掛到 window 讓 HTML onclick 使用
+      window.requestSensorPermissionsManually = requestSensorPermissionsManually;
+      window.retryGeolocation = setupGeolocation;
+      window.destroyDeviceStateManager = destroyDeviceStateManager;
+    });
+  </script>
+</body>
+</html>
