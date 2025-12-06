@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>取得海拔資訊</title>
+</head>
+<body>
+<h3>海拔資訊測試</h3>
+<button id="btn">取得海拔資訊</button>
+
+<p id="result">尚未取得資料</p>
+
+<script>
+document.getElementById("btn").addEventListener("click", () => {
+  if (!navigator.geolocation) {
+    document.getElementById("result").textContent = "此瀏覽器不支援定位。";
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const alt = position.coords.altitude;
+      const acc = position.coords.altitudeAccuracy;
+
+      if (alt === null) {
+        document.getElementById("result").textContent =
+          "無法取得海拔（設備或瀏覽器未提供 altitude）。";
+      } else {
+        document.getElementById("result").textContent =
+          `海拔高度：${alt} 公尺 (±${acc} 公尺)`;
+      }
+    },
+    (error) => {
+      document.getElementById("result").textContent =
+        "定位失敗：" + error.message;
+    },
+    {
+      enableHighAccuracy: true, // 有機會提高海拔成功率
+      timeout: 8000
+    }
+  );
+});
+</script>
+</body>
+</html>
