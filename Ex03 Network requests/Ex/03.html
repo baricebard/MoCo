@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fetch</title>
+    <style>
+        .sensor-data { margin: 20px; padding: 15px; border: 1px solid #ccc; }
+        .axis { margin: 10px 0; }
+        .value { font-weight: bold; color: #007bff; }
+    </style>
+</head>
+<body>
+    <h1>Fetch Demo</h1>
+    <div class="json-output">
+        <h3>JSON 資料格式</h3>
+        <pre id="jsonOutput"></pre>
+    </div>
+
+    <script>
+        async function f_test(){
+            let user = {
+                name: 'John',
+                surname: 'Smith'
+            };
+
+            let response = await fetch('https://javascript.info/article/fetch/post/user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json;charset=utf-8'
+            },
+            body: JSON.stringify(user)
+            });
+
+            let result = await response.json();
+            alert(result.message);
+            const jsonOutput = document.getElementById('jsonOutput');
+            jsonOutput.textContent = JSON.stringify(result.message);
+        }
+        f_test()
+    </script>
+</body>
+</html>
+

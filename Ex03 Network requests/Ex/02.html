@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fetch</title>
+    <style>
+        .sensor-data { margin: 20px; padding: 15px; border: 1px solid #ccc; }
+        .axis { margin: 10px 0; }
+        .value { font-weight: bold; color: #007bff; }
+    </style>
+</head>
+<body>
+    <h1>Fetch Demo</h1>
+    <div class="json-output">
+        <h3>JSON 資料格式</h3>
+        <pre id="jsonOutput"></pre>
+    </div>
+
+    <script>
+        async function f_test(){
+            let url = 'https://resources.whatwg.org/logo-fetch.svg'
+            let response = await fetch(url);
+
+            let blob = await response.blob(); // download as Blob object
+
+            // create <img> for it
+            let img = document.createElement('img');
+            img.style = 'position:fixed;top:10px;left:10px;width:100px';
+            document.body.append(img);
+
+            // show it
+            img.src = URL.createObjectURL(blob);
+
+            setTimeout(() => { // hide after three seconds
+            //img.remove();
+            //URL.revokeObjectURL(img.src);
+            }, 3000);
+        }
+        f_test()
+    </script>
+</body>
+</html>
+
