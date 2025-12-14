@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 
+=======
+>>>>>>> b4989737e244b73f4c19d456a73202fd64f8fd3d
 <!DOCTYPE html>
 <html>
 <head>
@@ -13,17 +16,21 @@
     <h1>Fetch Demo</h1>
     <div class="json-output">
         <h3>JSON 資料格式</h3>
+<<<<<<< HEAD
         <form id="formElem">
             <input type="text" name="name" value="John">
             <input type="text" name="surname" value="Smith">
             <input type="text" name="age" value="15">
             <input type="submit">
         </form>
+=======
+>>>>>>> b4989737e244b73f4c19d456a73202fd64f8fd3d
         <pre id="jsonOutput"></pre>
     </div>
 
     <script>
         async function f_test(){
+<<<<<<< HEAD
               formElem.onsubmit = async (e) => {
                 e.preventDefault();
 
@@ -36,14 +43,37 @@
 
                 console.log(result);
             };
+=======
+            let user = {
+                name: 'John',
+                surname: 'Smith'
+            };
+
+            let response = await fetch('https://httpbin.org/post', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json;charset=utf-8'
+            },
+            body: JSON.stringify(user)
+            });
+
+            let result = await response.json();
+            console.log(result)
+            
+            const jsonOutput = document.getElementById('jsonOutput');
+            jsonOutput.textContent = JSON.stringify(result);
+>>>>>>> b4989737e244b73f4c19d456a73202fd64f8fd3d
         }
         f_test()
     </script>
 </body>
 </html>
 
+<<<<<<< HEAD
 
 
 <script>
 
 </script>
+=======
+>>>>>>> b4989737e244b73f4c19d456a73202fd64f8fd3d
