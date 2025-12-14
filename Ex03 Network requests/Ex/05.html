@@ -1,0 +1,46 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fetch</title>
+    <style>
+        .sensor-data { margin: 20px; padding: 15px; border: 1px solid #ccc; }
+        .axis { margin: 10px 0; }
+        .value { font-weight: bold; color: #007bff; }
+    </style>
+</head>
+<body>
+    <h1>Fetch Demo</h1>
+    <div class="json-output">
+        <h3>JSON 資料格式</h3>
+        <form id="formElem">
+            <input type="text" name="firstName" value="John">
+            Picture: <input type="file" name="picture" accept="image/*">
+            <input type="submit">
+        </form>
+        <pre id="jsonOutput"></pre>
+    </div>
+
+    <script>
+        const formElem = document.getElementById("formElem");
+        formElem.onsubmit = async (e) => {
+            e.preventDefault();
+
+            let response = await fetch('https://httpcan.org/post', {
+                method: 'POST',
+                body: new FormData(formElem)
+            });
+
+            let result = await response.json();
+
+            alert(result.message);
+        };
+    </script>
+</body>
+</html>
+
+
+
+<script>
+  
+</script>
