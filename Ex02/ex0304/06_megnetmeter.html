@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Magnetometer 最簡單範例</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 16px; }
+    pre { font-size: 16px; }
+    button { font-size: 16px; padding: 8px 12px; }
+  </style>
+</head>
+<body>
+  <button id="btn">開始讀取磁力計</button>
+  <pre id="out">尚未開始</pre>
+
+  <script>
+    const btn = document.getElementById('btn');
+    const out = document.getElementById('out');
+
+    function show(msg) {
+      out.textContent = msg;
+    }
+
+    async function startMagnetometer() {
+      // 1) 基本環境檢查
+      if (!window.isSecureContext) {
+        show('錯誤：必須在安全環境 (HTTPS) 才能使用 Magnetometer。');
+        return;
+      }
+      if (!('Magnetometer' in window)) {
+        show('此瀏覽器不支援 Magnetometer (Generic Sensor API)。');
+        return;
+      }
+
+      // 2) 申請/確認權限（若瀏覽器支援 Permissions API）
+      //    依 MDN：需要取得 "magnetometer" 權限。:contentReference[oaicite:2]{index=2}
+      if ('permissions' in navigator && navigator.permissions && navigator.permissions.query) {
+        try {
+          const status = await navigator.permissions.query({ name: 'magnetometer' });
+          if (status.state === 'denied') {
+            show('使用者已拒絕 magnetometer 權限。請到瀏覽器設定開啟後再試。');
+            return;
+          }
+          // state 可能是 'granted' 或 'prompt'；'prompt' 時通常會在 start() 後觸發提示
+        } catch (e) {
+          // 有些瀏覽器雖有 permissions 但不支援這個 name；直接忽略並嘗試 start()
+        }
+      }
+
+      // 3) 建立感測器並開始
+      let sensor;
+      try {
+        sensor = new Magnetometer({ frequency: 10 }); // 10 Hz（可省略）
+      } catch (e) {
+        show('建立 Magnetometer 失敗：' + (e && e.name ? e.name : e));
+        return;
+      }
+
+      sensor.addEventListener('reading', function () {
+        // x/y/z：磁場三軸值（通常 μT）:contentReference[oaicite:3]{index=3}
+        show(
+          'Magnetometer reading\n' +
+          'x: ' + sensor.x + '\n' +
+          'y: ' + sensor.y + '\n' +
+          'z: ' + sensor.z + '\n' +
+          'timestamp: ' + sensor.timestamp
+        );
+      });
+
+      sensor.addEventListener('error', function (event) {
+        // 可能是 SecurityError（被 Permissions Policy 擋或非允許情境）:contentReference[oaicite:4]{index=4}
+        const err = event.error;
+        show('感測器錯誤：' + (err && err.name ? err.name : err));
+      });
+
+      try {
+        sensor.start();
+      } catch (e) {
+        show('start() 失敗：' + (e && e.name ? e.name : e));
+      }
+    }
+
+    btn.addEventListener('click', async function () {
+      btn.disabled = true;
+      await startMagnetometer();
+      // 不自動 re-enable，避免重複 start；你需要可再自行調整
+    });
+  </script>
+</body>
+</html>
