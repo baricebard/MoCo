@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>Ambient Light Sensor Demo</title>
+</head>
+<body>
+  <h1>Ambient Light Sensor</h1>
+  <button id="btn">開始讀取環境光</button>
+  <p id="output">尚未開始</p>
+
+  <script>
+    const output = document.getElementById("output");
+    const btn = document.getElementById("btn");
+
+    btn.onclick = async () => {
+      try {
+        // 1️檢查 API 是否存在
+        if (!("AmbientLightSensor" in window)) {
+          output.textContent = "此瀏覽器不支援 AmbientLightSensor";
+          return;
+        }
+
+        // 2️查詢權限
+        if ("permissions" in navigator) {
+          const permission = await navigator.permissions.query({
+            name: "ambient-light-sensor"
+          });
+
+          if (permission.state === "denied") {
+            output.textContent = "使用者拒絕環境光感測器權限";
+            return;
+          }
+        }
+
+        // 3️建立感測器（非 class 寫法）
+        const sensor = new AmbientLightSensor();
+
+        // 4️監聽資料
+        sensor.onreading = () => {
+          output.textContent = `環境光亮度：${sensor.illuminance} lux`;
+        };
+
+        sensor.onerror = (event) => {
+          output.textContent = "感測器錯誤：" + event.error.name;
+        };
+
+        // 5️啟動
+        sensor.start();
+
+      } catch (err) {
+        output.textContent = "發生錯誤：" + err.message;
+      }
+    };
+  </script>
+</body>
+</html>
