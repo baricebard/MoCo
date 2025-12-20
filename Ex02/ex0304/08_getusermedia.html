@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>getUserMedia 最簡範例</title>
+</head>
+<body>
+
+<button id="btn">啟用相機與麥克風</button>
+<br><br>
+
+<video id="video" autoplay playsinline></video>
+
+<script>
+  const btn = document.getElementById('btn');
+  const video = document.getElementById('video');
+
+  btn.onclick = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true
+      });
+
+      video.srcObject = stream;
+
+    } catch (err) {
+      console.error(err);
+      alert('無法取得相機或麥克風權限');
+    }
+  };
+</script>
+
+</body>
+</html>
