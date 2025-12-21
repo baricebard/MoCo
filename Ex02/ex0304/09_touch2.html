@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Touch Canvas 最簡範例</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; margin: 16px; }
+    #wrap { max-width: 900px; margin: 0 auto; }
+    #bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+    button { padding: 8px 12px; border-radius: 10px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
+    button:active { transform: translateY(1px); }
+    #status { color: #444; }
+    canvas {
+      width: 100%;
+      height: 55vh;
+      border: 2px solid #999;
+      border-radius: 12px;
+      background: #fff;
+      display: block;
+      touch-action: none; /* 重要：避免捲動/縮放吃掉 touchmove */
+    }
+    #log {
+      margin-top: 12px;
+      white-space: pre-wrap;
+      background: #f6f6f6;
+      padding: 12px;
+      border-radius: 10px;
+      min-height: 5.5em;
+    }
+    .hint { color: #666; margin: 6px 0 12px; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <h2>Touch 觸控畫布：最簡範例</h2>
+    <div class="hint">在畫布上用手指畫畫（單指）。下方會顯示捕捉到的事件與座標。</div>
+
+    <div id="bar">
+      <button id="clearBtn">清除</button>
+      <span id="status"></span>
+    </div>
+
+    <canvas id="c"></canvas>
+    <div id="log">等待觸控...</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const log = document.getElementById('log');
+    const status = document.getElementById('status');
+    const clearBtn = document.getElementById('clearBtn');
+
+    let drawing = false;
+    let last = null;
+
+    function setLog(text) {
+      log.textContent = text;
+    }
+
+    function resizeCanvasToCSSSize() {
+      // 讓 canvas 內部解析度跟 CSS 顯示大小一致（避免模糊 & 座標不準）
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
+
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // 之後用 CSS px 畫就行
+        // 畫筆基本設定
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+      }
+    }
+
+    function getPointFromTouch(touch) {
+      const rect = canvas.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      return { x, y };
+    }
+
+    function drawLine(a, b) {
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+
+    function formatTouchInfo(e, phase, point) {
+      const t = e.touches[0] || e.changedTouches[0];
+      const pressure = (t && typeof t.force === 'number') ? t.force : null; // iOS 常見
+      const rx = (t && typeof t.radiusX === 'number') ? t.radiusX : null;
+      const ry = (t && typeof t.radiusY === 'number') ? t.radiusY : null;
+
+      const pStr = point ? `(${Math.round(point.x)}, ${Math.round(point.y)})` : '(n/a)';
+      const forceStr = (pressure === null) ? 'n/a' : pressure.toFixed(3);
+      const rStr = (rx === null || ry === null) ? 'n/a' : `${Math.round(rx)}x${Math.round(ry)}`;
+
+      return [
+        phase,
+        `touches: ${e.touches.length}, changedTouches: ${e.changedTouches.length}`,
+        `pos: ${pStr}`,
+        `force: ${forceStr}`,
+        `radius: ${rStr}`
+      ].join('\n');
+    }
+
+    function onTouchStart(e) {
+      e.preventDefault();
+      resizeCanvasToCSSSize();
+
+      // 只示範單指畫線（多指就忽略繪圖，但仍顯示事件資訊）
+      const t = e.touches[0];
+      if (!t) return;
+
+      const p = getPointFromTouch(t);
+      drawing = (e.touches.length === 1);
+      last = p;
+
+      // 畫一個點（避免只是點一下沒線）
+      if (drawing) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      setLog(formatTouchInfo(e, 'touchstart', p));
+    }
+
+    function onTouchMove(e) {
+      e.preventDefault();
+      const t = e.touches[0];
+      if (!t) return;
+
+      const p = getPointFromTouch(t);
+
+      if (drawing && last) {
+        drawLine(last, p);
+        last = p;
+      }
+
+      setLog(formatTouchInfo(e, 'touchmove', p));
+    }
+
+    function onTouchEnd(e) {
+      e.preventDefault();
+
+      // end 時 touches 可能是 0，所以用 changedTouches 取最後位置
+      const t = e.changedTouches[0];
+      const p = t ? getPointFromTouch(t) : null;
+
+      drawing = false;
+      last = null;
+
+      setLog(formatTouchInfo(e, 'touchend', p));
+    }
+
+    function onTouchCancel(e) {
+      e.preventDefault();
+      drawing = false;
+      last = null;
+      setLog('touchcancel');
+    }
+
+    function clearCanvas() {
+      resizeCanvasToCSSSize();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      setLog('已清除。等待觸控...');
+    }
+
+    async function main() {
+      const touchSupported = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+      status.textContent = touchSupported ? '已偵測到觸控支援' : '未偵測到觸控支援（可能是桌機無觸控）';
+
+      resizeCanvasToCSSSize();
+      window.addEventListener('resize', resizeCanvasToCSSSize);
+
+      const opts = { passive: false };
+      canvas.addEventListener('touchstart', onTouchStart, opts);
+      canvas.addEventListener('touchmove', onTouchMove, opts);
+      canvas.addEventListener('touchend', onTouchEnd, opts);
+      canvas.addEventListener('touchcancel', onTouchCancel, opts);
+
+      clearBtn.addEventListener('click', clearCanvas);
+    }
+
+    main();
+  </script>
+</body>
+</html>
