@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Touch 最簡範例</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; margin: 16px; }
+    #pad {
+      height: 55vh;
+      border: 2px dashed #999;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none; /* 避免被瀏覽器手勢(捲動/縮放)吃掉 */
+    }
+    #log { white-space: pre-wrap; background: #f6f6f6; padding: 12px; border-radius: 8px; }
+    .hint { color: #555; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <h2>Touch 觸控能力：最簡範例</h2>
+  <div class="hint">用手指在方框內觸控 / 拖曳 / 放開</div>
+
+  <div id="pad">Touch Here</div>
+  <p id="log">等待觸控...</p>
+
+  <script>
+    const pad = document.getElementById('pad');
+    const log = document.getElementById('log');
+
+    function setLog(text) {
+      log.textContent = text;
+    }
+
+    function getPoint(touch, targetEl) {
+      const rect = targetEl.getBoundingClientRect();
+      const x = Math.round(touch.clientX - rect.left);
+      const y = Math.round(touch.clientY - rect.top);
+      return { x, y };
+    }
+
+    function onTouchStart(e) {
+      e.preventDefault(); // 讓你更容易看到 move（避免頁面捲動）
+      const t = e.touches[0];
+      const p = getPoint(t, pad);
+      setLog(`touchstart\nfinger count: ${e.touches.length}\n(x,y)=(${p.x},${p.y})`);
+    }
+
+    function onTouchMove(e) {
+      e.preventDefault();
+      const t = e.touches[0];
+      const p = getPoint(t, pad);
+      setLog(`touchmove\nfinger count: ${e.touches.length}\n(x,y)=(${p.x},${p.y})`);
+    }
+
+    function onTouchEnd(e) {
+      e.preventDefault();
+      // e.touches 在 end 時可能是 0（最後一指放開）
+      setLog(`touchend\nremaining fingers: ${e.touches.length}`);
+    }
+
+    async function main() {
+      // 驗證：是否支援 Touch 事件（最常見且直覺的檢查）
+      const touchSupported = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+      setLog(touchSupported ? '已偵測到觸控支援：請在方框內觸控' : '未偵測到觸控支援（可能是桌機無觸控）');
+
+      // 綁事件（不用鏈式、也不需要 Promise）
+      const opts = { passive: false }; // 需要 preventDefault 時，iOS/Chrome 要 passive:false
+      pad.addEventListener('touchstart', onTouchStart, opts);
+      pad.addEventListener('touchmove', onTouchMove, opts);
+      pad.addEventListener('touchend', onTouchEnd, opts);
+      pad.addEventListener('touchcancel', onTouchEnd, opts);
+    }
+
+    main();
+  </script>
+</body>
+</html>
