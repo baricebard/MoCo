@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Multi-Touch Canvas 最簡範例</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; margin: 16px; }
+    #wrap { max-width: 900px; margin: 0 auto; }
+    #bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+    button { padding: 8px 12px; border-radius: 10px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
+    #status { color: #444; }
+    canvas{
+      width: 100%;
+      height: 55vh;
+      border: 2px solid #999;
+      border-radius: 12px;
+      background: #fff;
+      display: block;
+      touch-action: none; /* 重要：避免捲動/縮放吃掉 touchmove */
+    }
+    #log{
+      margin-top: 12px;
+      white-space: pre-wrap;
+      background: #f6f6f6;
+      padding: 12px;
+      border-radius: 10px;
+      min-height: 7em;
+    }
+    .hint { color: #666; margin: 6px 0 12px; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <h2>多點觸控畫線（Multi-touch）</h2>
+    <div class="hint">用兩根以上手指同時在畫布上畫。每根手指會有自己的線。</div>
+
+    <div id="bar">
+      <button id="clearBtn">清除</button>
+      <span id="status"></span>
+    </div>
+
+    <canvas id="c"></canvas>
+    <div id="log">等待觸控...</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const log = document.getElementById('log');
+    const status = document.getElementById('status');
+    const clearBtn = document.getElementById('clearBtn');
+
+    // 用 Map 追蹤每根手指：key = touch.identifier, value = {x,y}
+    const lastById = new Map();
+
+    function setLog(text) {
+      log.textContent = text;
+    }
+
+    function resizeCanvasToCSSSize() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
+
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+      }
+    }
+
+    function getPointFromTouch(t) {
+      const rect = canvas.getBoundingClientRect();
+      const x = t.clientX - rect.left;
+      const y = t.clientY - rect.top;
+      return { x, y };
+    }
+
+    function drawLine(a, b) {
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+
+    function drawDot(p) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function summarizeEvent(e, phase) {
+      // 只列出 changedTouches（這次事件真的變動的那些手指）
+      const items = [];
+      for (const t of e.changedTouches) {
+        const p = getPointFromTouch(t);
+        const force = (typeof t.force === 'number') ? t.force.toFixed(3) : 'n/a';
+        items.push(`#${t.identifier} (${Math.round(p.x)},${Math.round(p.y)}) force:${force}`);
+      }
+      return [
+        phase,
+        `active fingers: ${e.touches.length}`,
+        `changed: ${e.changedTouches.length}`,
+        items.join('\n')
+      ].filter(Boolean).join('\n');
+    }
+
+    function onTouchStart(e) {
+      e.preventDefault();
+      resizeCanvasToCSSSize();
+
+      for (const t of e.changedTouches) {
+        const p = getPointFromTouch(t);
+        lastById.set(t.identifier, p);
+        drawDot(p);
+      }
+
+      setLog(summarizeEvent(e, 'touchstart'));
+    }
+
+    function onTouchMove(e) {
+      e.preventDefault();
+
+      for (const t of e.changedTouches) {
+        const p = getPointFromTouch(t);
+        const last = lastById.get(t.identifier);
+
+        if (last) {
+          drawLine(last, p);
+        } else {
+          // 理論上不常見，但避免缺資料
+          drawDot(p);
+        }
+
+        lastById.set(t.identifier, p);
+      }
+
+      setLog(summarizeEvent(e, 'touchmove'));
+    }
+
+    function onTouchEnd(e) {
+      e.preventDefault();
+
+      // 結束的手指在 changedTouches，從 Map 移除
+      for (const t of e.changedTouches) {
+        lastById.delete(t.identifier);
+      }
+
+      setLog(summarizeEvent(e, 'touchend'));
+    }
+
+    function onTouchCancel(e) {
+      e.preventDefault();
+      // 取消時也移除那些 identifier
+      for (const t of e.changedTouches) {
+        lastById.delete(t.identifier);
+      }
+      setLog(summarizeEvent(e, 'touchcancel'));
+    }
+
+    function clearCanvas() {
+      resizeCanvasToCSSSize();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      lastById.clear();
+      setLog('已清除。等待觸控...');
+    }
+
+    async function main() {
+      const touchSupported = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+      status.textContent = touchSupported ? '已偵測到觸控支援' : '未偵測到觸控支援（桌機可能無觸控）';
+
+      resizeCanvasToCSSSize();
+      window.addEventListener('resize', resizeCanvasToCSSSize);
+
+      const opts = { passive: false };
+      canvas.addEventListener('touchstart', onTouchStart, opts);
+      canvas.addEventListener('touchmove', onTouchMove, opts);
+      canvas.addEventListener('touchend', onTouchEnd, opts);
+      canvas.addEventListener('touchcancel', onTouchCancel, opts);
+
+      clearBtn.addEventListener('click', clearCanvas);
+    }
+
+    main();
+  </script>
+</body>
+</html>
