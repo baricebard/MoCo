@@ -26,14 +26,14 @@
         formElem.onsubmit = async (e) => {
             e.preventDefault();
 
-            let response = await fetch('https://httpcan.org/post', {
+            let response = await fetch('https://httpbingo.org/post', {
                 method: 'POST',
                 body: new FormData(formElem)
             });
 
             let result = await response.json();
 
-            alert(result.message);
+            console.log(result);
         };
     </script>
 </body>
