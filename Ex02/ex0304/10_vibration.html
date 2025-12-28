@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vibration 最簡範例</title>
+</head>
+<body>
+  <button id="btn">震動一下</button>
+  <p id="msg"></p>
+
+  <script>
+    async function vibrateOnce() {
+      var msg = document.getElementById('msg');
+
+      // 1) 支援檢查
+      if (!('vibrate' in navigator)) {
+        msg.textContent = '此瀏覽器不支援 Vibration API（iOS Safari 通常不支援）。';
+        return;
+      }
+
+      // 2) 觸發震動（單次 200ms）
+      var ok = navigator.vibrate(200);
+
+      // 3) 回報結果（ok=true 代表已接受請求；不一定代表真的有震動硬體或未被系統禁用）
+      msg.textContent = ok ? '已送出震動請求。' : '震動請求被拒絕（可能被瀏覽器/系統限制）。';
+    }
+
+    document.getElementById('btn').addEventListener('click', vibrateOnce);
+  </script>
+</body>
+</html>

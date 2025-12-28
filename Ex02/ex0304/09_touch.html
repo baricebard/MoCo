@@ -67,7 +67,7 @@
       const touchSupported = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
       setLog(touchSupported ? '已偵測到觸控支援：請在方框內觸控' : '未偵測到觸控支援（可能是桌機無觸控）');
 
-      // 綁事件（不用鏈式、也不需要 Promise）
+      // 綁事件
       const opts = { passive: false }; // 需要 preventDefault 時，iOS/Chrome 要 passive:false
       pad.addEventListener('touchstart', onTouchStart, opts);
       pad.addEventListener('touchmove', onTouchMove, opts);

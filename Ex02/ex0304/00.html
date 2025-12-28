@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h2 id="status">尚未旋轉</h2>
+
+  <script>
+    function update() {
+      const type = screen.orientation.type;
+      document.getElementById("status").textContent =
+        "目前方向：" + type;
+    }
+
+    update();
+    screen.orientation.addEventListener("change", update);
+  </script>
+</body>
+</html>
