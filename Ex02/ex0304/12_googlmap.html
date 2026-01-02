@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>手機定位 + Google 地圖</title>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #map { height: 100%; }
+    #info {
+      position: fixed; left: 12px; top: 12px; z-index: 10;
+      background: rgba(255,255,255,0.95); padding: 10px 12px;
+      border-radius: 10px; font: 14px/1.4 system-ui, -apple-system, "Segoe UI";
+      box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+      max-width: calc(100% - 24px);
+    }
+  </style>
+</head>
+<body>
+  <div id="info">準備定位…（請允許位置權限）</div>
+  <div id="map"></div>
+
+  <script>
+    let map;
+    let marker;
+
+    function initMap() {
+      const info = document.getElementById('info');
+
+      if (!('geolocation' in navigator)) {
+        info.textContent = '此瀏覽器不支援 Geolocation。';
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        function onSuccess(position) {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          info.textContent = `定位成功：${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+
+          const center = { lat: lat, lng: lng };
+
+          map = new google.maps.Map(document.getElementById('map'), {
+            center: center,
+            zoom: 16
+          });
+
+          marker = new google.maps.Marker({
+            position: center,
+            map: map,
+            title: '你的位置'
+          });
+        },
+        function onError(err) {
+          // err.code: 1=PERMISSION_DENIED, 2=POSITION_UNAVAILABLE, 3=TIMEOUT
+          info.textContent = `定位失敗：(${err.code}) ${err.message}`;
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    }
+  </script>
+
+  <!-- 把 API_KEY 換成你的 Google Maps JavaScript API Key -->
+  <script
+    async
+    defer
+    src="https://maps.googleapis.com/maps/api/js?key=API_KEY&callback=initMap">
+  </script>
+</body>
+</html>
