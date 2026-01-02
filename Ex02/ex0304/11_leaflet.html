@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Leaflet 手機定位最簡範例</title>
+
+  <!-- Leaflet (stable 1.9.4) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <style>
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", sans-serif; }
+    #bar { padding: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    #map { height: 70vh; }
+    #msg { padding: 0 12px 12px; white-space: pre-wrap; }
+    button { padding: 10px 12px; font-size: 16px; }
+  </style>
+</head>
+
+<body>
+  <div id="bar">
+    <button id="btn">取得手機位置並顯示地圖</button>
+    <span>（請允許定位權限）</span>
+  </div>
+  <div id="map"></div>
+  <div id="msg"></div>
+
+  <script>
+    let map;
+    let marker;
+    let accCircle;
+
+    function show_msg(text) {
+      document.getElementById("msg").textContent = text;
+    }
+
+    function get_location(options) {
+      return new Promise(function (resolve, reject) {
+        if (!("geolocation" in navigator)) {
+          reject(new Error("此瀏覽器不支援 Geolocation（navigator.geolocation）"));
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(resolve, reject, options);
+      });
+    }
+
+    function init_map(lat, lon, zoom) {
+      map = L.map("map");
+      map.setView([lat, lon], zoom);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "© OpenStreetMap contributors"
+      }).addTo(map);
+    }
+
+    function update_map(lat, lon, accuracy) {
+      if (!map) init_map(lat, lon, 16);
+
+      map.setView([lat, lon], map.getZoom());
+
+      if (!marker) marker = L.marker([lat, lon]).addTo(map);
+      marker.setLatLng([lat, lon]);
+
+      // 用圓形表示誤差範圍（公尺）
+      if (!accCircle) accCircle = L.circle([lat, lon], { radius: accuracy }).addTo(map);
+      accCircle.setLatLng([lat, lon]);
+      accCircle.setRadius(accuracy);
+    }
+
+    async function start() {
+      show_msg("定位中…");
+
+      try {
+        const pos = await get_location({
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        });
+
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const acc = pos.coords.accuracy;
+
+        update_map(lat, lon, acc);
+
+        show_msg(
+          "取得成功！\n" +
+          "緯度: " + lat + "\n" +
+          "經度: " + lon + "\n" +
+          "精準度(公尺): " + acc
+        );
+      } catch (err) {
+        let text = "定位失敗。\n";
+
+        // 常見錯誤：使用者拒絕、逾時、無法取得位置
+        if (err && typeof err.code === "number") {
+          if (err.code === 1) text += "原因：使用者拒絕授權（Permission denied）";
+          else if (err.code === 2) text += "原因：無法取得位置（Position unavailable）";
+          else if (err.code === 3) text += "原因：逾時（Timeout）";
+          else text += "原因：未知錯誤";
+          text += "\n詳細：" + (err.message || "");
+        } else {
+          text += "原因：" + (err && err.message ? err.message : String(err));
+        }
+
+        show_msg(text);
+      }
+    }
+
+    document.getElementById("btn").addEventListener("click", function () {
+      start();
+    });
+  </script>
+</body>
+</html>
